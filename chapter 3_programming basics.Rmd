@@ -1,6 +1,8 @@
 ---
 title: "chapter 3_programming basics"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 # Chapter 3 programming basics
 
@@ -96,10 +98,10 @@ Note how s is still 3 after we call avg.
 
 In general, functions are objects, so we assign them to variable names with <-. The function function tells R you are about to define a function. The general form of a function definition looks like this:
 ```{r}
-my_function <- function(VARIABLE_NAME){
-  perform operations on VARIABLE_NAME and calculate VALUE
-  VALUE
-}
+#my_function <- function(VARIABLE_NAME){
+#  perform operations on VARIABLE_NAME and calculate VALUE
+#  VALUE
+#}
 ```
 The functions you define can have multiple arguments as well as default values. For example, we can define a function that computes either the arithmetic or geometric average depending on a user defined variable like this:
 ```{r}
@@ -115,13 +117,13 @@ We will learn more about how to create functions through experience as we face m
 
 Once you start becoming more of an R expert user, you will likely need to load several add-on packages for some of your analysis. Once you start doing this, it is likely that two packages use the same name for two different functions. And often these functions do completely different things. In fact, you have already encountered this because both dplyr and the R-base stats package define a filter function. There are five other examples in dplyr. We know this because when we first load dplyr we see the following message:
 ```{r}
-The following objects are masked from 'package:stats':
+#The following objects are masked from 'package:stats':
   
-  filter, lag
+#  filter, lag
 
-The following objects are masked from 'package:base':
+#The following objects are masked from 'package:base':
   
-  intersect, setdiff, setequal, union
+#  intersect, setdiff, setequal, union
 ```
 So what does R do when we type filter? Does it use the dplyr function or the stats function? From our previous work we know it uses the dplyr one. But what if we want to use the stats version?
 
