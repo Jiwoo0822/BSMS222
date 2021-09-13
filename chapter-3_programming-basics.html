@@ -402,7 +402,7 @@ avg</code></pre>
 ##     else &quot;ts&quot;
 ##     y
 ## }
-## &lt;bytecode: 0x000000001507c1d0&gt;
+## &lt;bytecode: 0x000000001507c2f0&gt;
 ## &lt;environment: namespace:stats&gt;</code></pre>
 <pre class="r"><code>#function (x, filter, method = c(&quot;convolution&quot;, &quot;recursive&quot;), 
 #    sides = 2L, circular = FALSE, init = NULL) 
@@ -529,7 +529,7 @@ avg</code></pre>
 ## {
 ##     UseMethod(&quot;filter&quot;)
 ## }
-## &lt;bytecode: 0x00000000147f4ea8&gt;
+## &lt;bytecode: 0x000000001496c670&gt;
 ## &lt;environment: namespace:dplyr&gt;</code></pre>
 <pre class="r"><code>#function (.data, ..., .preserve = FALSE) 
 #{
@@ -598,8 +598,7 @@ sqrt(x)</code></pre>
 <pre class="r"><code>y &lt;- 1:10
 x*y</code></pre>
 <pre><code>##  [1]   1   4   9  16  25  36  49  64  81 100</code></pre>
-<pre class="r"><code># [1] 1.000000 1.414214 1.732051 2.000000 2.236068
-# [6] 2.449490 2.645751 2.828427 3.000000 3.162278
+<pre class="r"><code># [1] 1.000000 1.414214 1.732051 2.000000 2.236068 2.449490 2.645751 2.828427 3.000000 3.162278
 # [1]   1   4   9  16  25  36  49  64  81 100</code></pre>
 <p>To make this calculation, there is no need for for-loops. However, not all functions work this way. For instance, the function we just wrote, compute_s_n, does not work element-wise since it is expecting a scalar. This piece of code does not run the function on each entry of n:</p>
 <pre class="r"><code>n &lt;- 1:25
@@ -607,24 +606,23 @@ compute_s_n(n)</code></pre>
 <pre><code>## Warning in 1:n: 수치형 표현식(numerical expression)은 25개의 구성요소들을 가지고
 ## 있기 때문에 오로지 첫번째 것만을 사용합니다.</code></pre>
 <pre><code>## [1] 1</code></pre>
-<pre class="r"><code>#[1] 1</code></pre>
+<pre class="r"><code>#Warning in 1:n :
+#  numerical expression has 25 elements: only the first used
+#[1] 1</code></pre>
 <p>Functionals are functions that help us apply the same function to each entry in a vector, matrix, data frame, or list. Here we cover the functional that operates on numeric, logical, and character vectors: sapply.</p>
 <p>The function sapply permits us to perform element-wise operations on any function. Here is how it works:</p>
 <pre class="r"><code>x &lt;- 1:10
 sapply(x, sqrt)</code></pre>
 <pre><code>##  [1] 1.000000 1.414214 1.732051 2.000000 2.236068 2.449490 2.645751 2.828427
 ##  [9] 3.000000 3.162278</code></pre>
-<pre class="r"><code># [1] 1.000000 1.414214 1.732051 2.000000 2.236068
-# [6] 2.449490 2.645751 2.828427 3.000000 3.162278</code></pre>
+<pre class="r"><code>#  [1] 1.000000 1.414214 1.732051 2.000000 2.236068 2.449490 2.645751 2.828427 3.000000 3.162278</code></pre>
 <p>Each element of x is passed on to the function sqrt and the result is returned. These results are concatenated. In this case, the result is a vector of the same length as the original x. This implies that the for-loop above can be written as follows:</p>
 <pre class="r"><code>n &lt;- 1:25
 s_n &lt;- sapply(n, compute_s_n)
 s_n</code></pre>
 <pre><code>##  [1]   1   3   6  10  15  21  28  36  45  55  66  78  91 105 120 136 153 171 190
 ## [20] 210 231 253 276 300 325</code></pre>
-<pre class="r"><code># [1]   1   3   6  10  15  21  28  36  45  55  66
-#[12]  78  91 105 120 136 153 171 190 210 231 253
-#[23] 276 300 325</code></pre>
+<pre class="r"><code>#[1]   1   3   6  10  15  21  28  36  45  55  66  78  91 105 120 136 153 171 190 210 231 253 276 300 325</code></pre>
 <p>Other functionals are apply, lapply, tapply, mapply, vapply, and replicate. We mostly use sapply, apply, and replicate in this book, but we recommend familiarizing yourselves with the others as they can be very useful.</p>
 </div>
 <div id="exercises" class="section level2">
@@ -737,9 +735,8 @@ for(n in 1:m){
 s_n</code></pre>
 <pre><code>##  [1]    1    5   14   30   55   91  140  204  285  385  506  650  819 1015 1240
 ## [16] 1496 1785 2109 2470 2870 3311 3795 4324 4900 5525</code></pre>
-<pre class="r"><code>#[1]    1    5   14   30   55   91  140  204  285
-#[10]  385  506  650  819 1015 1240 1496 1785 2109
-#[19] 2470 2870 3311 3795 4324 4900 5525</code></pre>
+<pre class="r"><code># [1]    1    5   14   30   55   91  140  204  285  385  506  650  819 1015 1240 1496 1785 2109 2470 2870 3311
+#[22] 3795 4324 4900 5525</code></pre>
 <ol start="9" style="list-style-type: decimal">
 <li>Repeat exercise 8, but this time use sapply.</li>
 </ol>
@@ -748,9 +745,8 @@ s_n &lt;- sapply(n, compute_s_n)
 s_n</code></pre>
 <pre><code>##  [1]    1    5   14   30   55   91  140  204  285  385  506  650  819 1015 1240
 ## [16] 1496 1785 2109 2470 2870 3311 3795 4324 4900 5525</code></pre>
-<pre class="r"><code>#[1]    1    5   14   30   55   91  140  204  285
-#[10]  385  506  650  819 1015 1240 1496 1785 2109
-#[19] 2470 2870 3311 3795 4324 4900 5525</code></pre>
+<pre class="r"><code># [1]    1    5   14   30   55   91  140  204  285  385  506  650  819 1015 1240 1496 1785 2109 2470 2870 3311
+#[22] 3795 4324 4900 5525</code></pre>
 <ol start="10" style="list-style-type: decimal">
 <li>Repeat exercise 8, but this time use map_dbl.</li>
 </ol>
@@ -767,9 +763,20 @@ s_n</code></pre>
 map_dbl(n, compute_s_n)</code></pre>
 <pre><code>##  [1]    1    5   14   30   55   91  140  204  285  385  506  650  819 1015 1240
 ## [16] 1496 1785 2109 2470 2870 3311 3795 4324 4900 5525</code></pre>
-<pre class="r"><code>#[1]    1    5   14   30   55   91  140  204  285
-#[10]  385  506  650  819 1015 1240 1496 1785 2109
-#[19] 2470 2870 3311 3795 4324 4900 5525</code></pre>
+<pre class="r"><code>#Registered S3 methods overwritten by &#39;dbplyr&#39;:
+#  method         from
+#  print.tbl_lazy     
+#  print.tbl_sql      
+#-- Attaching packages ---------------------------------------------------------------------- tidyverse 1.3.1 --
+#√ ggplot2 3.3.5     √ purrr   0.3.4
+#√ tibble  3.1.4     √ dplyr   1.0.7
+#√ tidyr   1.1.3     √ stringr 1.4.0
+#√ readr   2.0.1     √ forcats 0.5.1
+#-- Conflicts ------------------------------------------------------------------------- tidyverse_conflicts() --
+#x dplyr::filter() masks stats::filter()
+#x dplyr::lag()    masks stats::lag()
+# [1]    1    5   14   30   55   91  140  204  285  385  506  650  819 1015 1240 1496 1785 2109 2470 2870 3311
+#[22] 3795 4324 4900 5525</code></pre>
 <ol start="11" style="list-style-type: decimal">
 <li>Plot S_n versus n. Use points defined by n=1,,25.</li>
 </ol>
