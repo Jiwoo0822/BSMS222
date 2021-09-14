@@ -148,6 +148,9 @@ murders
 ```
 2. If rank(x) gives you the ranks of x from lowest to highest, rank(-x) gives you the ranks from highest to lowest. Use the function mutate to add a column rank containing the rank, from highest to lowest murder rate. Make sure you redefine murders so we can keep using this variable.
 ```{r}
+#x <- murder_rate
+#murders <- mutate(murders, rank(-x))
+#or
 rate <- murders$total/murders$population*100000
 murders <- mutate(murders, rank=rank(-rate))
 
