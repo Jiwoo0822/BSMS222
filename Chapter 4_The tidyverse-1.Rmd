@@ -3,6 +3,7 @@ title: "Chapter 4_The tidyverse-1"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 # Chapter 4 The tidyverse
 
