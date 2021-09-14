@@ -298,6 +298,7 @@ select(my_states, state, rate, rank)
 The pipe %>% permits us to perform both operations sequentially without having to define an intermediate variable my_states. We therefore could have mutated and selected in the same line like this:
 
 ```{r}
+pander(murders)
 mutate(murders, rate= total/population*100000, rank=rank(-rate)) %>% select(state, rate, rank)
 ```
 Notice that select no longer has a data frame as the first argument. The first argument is assumed to be the result of the operation conducted right before the %>%.
@@ -306,6 +307,7 @@ Repeat the previous exercise, but now instead of creating a new object, show the
 
 ```{r}
 library(dplyr)
+pander(murders)
 murders <- mutate(murders, rate =  total / population * 100000, rank = rank(-rate))
 filter(murders, region %in% c("Northeast", "West")&rate<1)%>%
   select(state,rate,rank)
@@ -313,9 +315,7 @@ filter(murders, region %in% c("Northeast", "West")&rate<1)%>%
 2. Reset murders to the original table by using data(murders). Use a pipe to create a new data frame called my_states that considers only states in the Northeast or West which have a murder rate lower than 1, and contains only the state, rate and rank columns. The pipe should also have four components separated by three %>%. The code should look something like this:
 
 ```{r}
-library(pander)
 pander(murders)
-data(murders)
 my_states <- murders %>% mutate (rate=total/murders$population*100000, rank=rank(-rate))%>%filter(region %in% c("Northeast", "West") & rate<1)%>%select(state,rate,rank)
 my_states
 ```

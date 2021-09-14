@@ -272,7 +272,7 @@ Notice that select no longer has a data frame as the first argument. The first a
 
 Repeat the previous exercise, but now instead of creating a new object, show the result and only include the state, rate, and rank columns. Use a pipe %>% to do this in just one line.
 ```{r}
-filter(murders, region %in% c("Northeast", "West") & rate<1) %>% select(state, rate, rank)
+filter(murders, region %in% c("Northeast", "West") & rate<1)%>%select(state, rate, rank)
 ```
 2. Reset murders to the original table by using data(murders). Use a pipe to create a new data frame called my_states that considers only states in the Northeast or West which have a murder rate lower than 1, and contains only the state, rate and rank columns. The pipe should also have four components separated by three %>%. The code should look something like this:
 ```{r}
