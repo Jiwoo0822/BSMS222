@@ -2337,8 +2337,11 @@ filter(new_table, rate &lt;= 0.71)</code></pre>
 <ol style="list-style-type: decimal">
 <li>Load the dplyr package and the murders dataset.</li>
 </ol>
-<pre class="r"><code>library(dplyr)
+<pre class="r"><code>library(tidyverse)
+library(dplyr)
+library(devtools)
 library(dslabs)
+library(pander)
 data(murders)</code></pre>
 <p>You can add columns using the dplyr function mutate. This function is aware of the column names and inside the function you can call them unquoted:</p>
 <pre class="r"><code>murders &lt;- mutate(murders, population_in_millions = population/10^6)</code></pre>

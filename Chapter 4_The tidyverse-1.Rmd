@@ -134,8 +134,11 @@ In the call to select, the first argument murders is an object, but state, regio
 
 1. Load the dplyr package and the murders dataset.
 ```{r}
+library(tidyverse)
 library(dplyr)
+library(devtools)
 library(dslabs)
+library(pander)
 data(murders)
 ```
 You can add columns using the dplyr function mutate. This function is aware of the column names and inside the function you can call them unquoted:
