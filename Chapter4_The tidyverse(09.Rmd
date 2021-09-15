@@ -73,7 +73,8 @@ c. ChickWeight is not tidy: we are missing the year column.
 d. ChickWeight is tidy: it is stored in a data frame.
 
 ```{r}
-ChickWeight
+library(pander)
+pander(ChickWeight)
 
 #answer - b
 ```
@@ -84,7 +85,8 @@ c. BOD is tidy: each row is an observation with two values (time and demand)
 d. BOD is tidy: all small datasets are tidy by definition.
 
 ```{r}
-BOD
+library(pander)
+pander(BOD)
 
 #answer - d
 ```
@@ -97,12 +99,13 @@ e. Orange
 f. UCBAdmissions
 
 ```{r}
-BJsales
-EuStockMarkets
-DNase
-Formaldehyde
-Orange
-UCBAdmissions
+library(pander)
+pander(BJsales)
+pander(EuStockMarkets)
+pander(DNase)
+pander(Formaldehyde)
+pander(Orange)
+pander(UCBAdmissions)
 
 # answer- DNase, Formaldehyde, Orange 
 ```
@@ -126,7 +129,8 @@ This is one of dplyr<e2>??s main features. Functions in this package, such as mu
 We can see that the new column is added:
 
 ```{r}
-head(murders)
+library(pander)
+pander(head(murders))
 ```
 Although we have overwritten the original murders object, this does not change the object that loaded with data(murders). If we load the murders data again, the original will overwrite our mutated version.
 
@@ -135,15 +139,18 @@ Although we have overwritten the original murders object, this does not change t
 Now suppose that we want to filter the data table to only show the entries for which the murder rate is lower than 0.71. To do this we use the filter function, which takes the data table as the first argument and then the conditional statement as the second. Like mutate, we can use the unquoted variable names from murders inside the function and it will know we mean the columns and not objects in the workspace.
 
 ```{r}
-filter(murders, rate <= 0.71)
+library(pander)
+pander(filter(murders, rate <= 0.71))
 ```
 ### 4.3.3 Selecting columns with select
 
 Although our data table only has six columns, some data tables include hundreds. If we want to view just a few, we can use the dplyr select function. In the code below we select three columns, assign this to a new object and then filter the new object:
 
 ```{r}
+library(pander)
 new_table <- select(murders, state, region, rate)
-filter(new_table, rate <= 0.71)
+pander(filter(new_table, rate <= 0.71))
+
 ```
 In the call to select, the first argument murders is an object, but state, region, and rate are variable names.
 
@@ -159,53 +166,62 @@ data(murders)
 You can add columns using the dplyr function mutate. This function is aware of the column names and inside the function you can call them unquoted:
 
 ```{r}
+library(tidyverse)
+library(pander)
 murders <- mutate(murders, population_in_millions = population / 10^6)
+pander(murders)
 ```
 We can write population rather than murders$population. The function mutate knows we are grabbing columns from murders.
 
 Use the function mutate to add a murders column named rate with the per 100,000 murder rate as in the example code above. Make sure you redefine murders as done in the example code above ( murders <- [your code]) so we can keep using this variable.
 
 ```{r}
+library(pander)
 murders <- mutate(murders, rate = total/population *100000)
 
-murders
+pander(murders)
 ```
 2. If rank(x) gives you the ranks of x from lowest to highest, rank(-x) gives you the ranks from highest to lowest. Use the function mutate to add a column rank containing the rank, from highest to lowest murder rate. Make sure you redefine murders so we can keep using this variable.
 
 ```{r}
+library(pander)
 rate <- murders$total/murders$population*100000
-murders <- mutate(murders, rank=rank(-rate))
+pander(murders <- mutate(murders, rank=rank(-rate)))
 
-murders
 ```
 3. With dplyr, we can use select to show only certain columns. For example, with this code we would only show the states and population sizes:
 
 ```{r}
-select(murders, state, population) %>% head()
+library(pander)
+pander(select(murders, state, population) %>% head())
 ```
 Use select to show the state names and abbreviations in murders. Do not redefine murders, just show the results.
 
 ```{r}
-select(murders, state, abb) %>% head()
-select(murders, state, abb)
+library(pander)
+pander(select(murders, state, abb) %>% head())
+pander(select(murders, state, abb))
 ```
 4. The dplyr function filter is used to choose specific rows of the data frame to keep. Unlike select which is for columns, filter is for rows. For example, you can show just the New York row like this:
 
 ```{r}
-filter(murders, state == "New York")
+library(pander)
+pander(filter(murders, state == "New York"))
 ```
 You can use other logical vectors to filter rows.
 
 Use filter to show the top 5 states with the highest murder rates. After we add murder rate and rank, do not change the murders dataset, just show the result. Remember that you can filter based on the rank column.
 
 ```{r}
-filter(murders, state == "New York")
+library(pander)
+pander(filter(murders, state == "New York"))
 ```
 5. We can remove rows using the != operator. For example, to remove Florida, we would do this:
 
 ```{r}
-no_florida <- filter(murders, state != "Florida")
-murders
+library(pander)
+pander(no_florida <- filter(murders, state != "Florida"))
+pander(murders)
 ```
 Create a new data frame called no_south that removes states from the South region. How many states are in this category? You can use the function nrow for this.
 
@@ -216,27 +232,32 @@ nrow(no_south)
 6. We can also use %in% to filter with dplyr. You can therefore see the data from New York and Texas like this:
 
 ```{r}
-filter(murders, state %in% c("New York", "Texas"))
+library(pander)
+pander(filter(murders, state %in% c("New York", "Texas")))
 ```
 Create a new data frame called murders_nw with only the states from the Northeast and the West. How many states are in this category?
 
 ```{r}
+library(pander)
 murders_nw <- filter(murders, region %in% c("Northeast", "West"))
 
-murders_nw
+pander(murders_nw)
 
 #answer - 22
 ```
 7. Suppose you want to live in the Northeast or West and want the murder rate to be less than 1. We want to see the data for the states satisfying these options. Note that you can use logical operators with filter. Here is an example in which we filter to keep only small states in the Northeast region.
 
 ```{r}
-filter(murders, population < 5000000 & region == "Northeast")
+library(pander)
+pander(filter(murders, population < 5000000 & region == "Northeast"))
 ```
 Make sure murders has been defined with rate and rank and still has all states. Create a table called my_states that contains rows for states satisfying both the conditions: it is in the Northeast or West and the murder rate is less than 1. Use select to show only the state name, the rate, and the rank.
 
 ```{r}
+library(pander)
 my_states <- filter(murders, region %in% c("Northeast", "West") & rate < 1)
 select(my_states, state, rate, rank)
+pander(my_states)
 ```
 ## 4.5 The pipe: %>%
 
@@ -250,7 +271,8 @@ original data <e2>??select <e2>??filter
 For such an operation, we can use the pipe %>%. The code looks like this:
 
 ```{r}
-murders %>% select(state, region, rate) %>% filter(rate <= 0.71)
+library(pander)
+pander(murders %>% select(state, region, rate) %>% filter(rate <= 0.71))
 ```
 This line of code is equivalent to the two lines of code above. What is going on here?
 
@@ -274,7 +296,8 @@ Remember that the pipe sends values to the first argument, so we can define othe
 Therefore, when using the pipe with data frames and dplyr, we no longer need to specify the required first argument since the dplyr functions we have described all take the data as the first argument. In the code we wrote:
 
 ```{r}
-murders %>% select(state, region, rate) %>% filter(rate <= 0.71)
+library(pander)
+pander(murders %>% select(state, region, rate) %>% filter(rate <= 0.71))
 ```
 murders is the first argument of the select function, and the new data frame (formerly new_table) is the first argument of the filter function.
 
@@ -285,37 +308,42 @@ Note that the pipe works well with functions where the first argument is the inp
 1. The pipe %>% can be used to perform operations sequentially without having to define intermediate objects. Start by redefining murder to include rate and rank.
 
 ```{r}
-murders <- mutate(murders, rate = total / population*100000, rank=rank(-rate))
-murders
+library(pander)
+pander(murders <- mutate(murders, rate = total / population*100000, rank=rank(-rate)))
+
 ```
 In the solution to the previous exercise, we did the following:
 
 ```{r}
+library(pander)
 my_states <- filter(murders, region %in% c("Northeast", "West")& rate<1)
 
 select(my_states, state, rate, rank)
+pander(my_states)
 ```
 The pipe %>% permits us to perform both operations sequentially without having to define an intermediate variable my_states. We therefore could have mutated and selected in the same line like this:
 
 ```{r}
-pander(murders)
-mutate(murders, rate= total/population*100000, rank=rank(-rate)) %>% select(state, rate, rank)
+library(pander)
+pander(mutate(murders, rate= total/population*100000, rank=rank(-rate)) %>% select(state, rate, rank))
 ```
 Notice that select no longer has a data frame as the first argument. The first argument is assumed to be the result of the operation conducted right before the %>%.
 
 Repeat the previous exercise, but now instead of creating a new object, show the result and only include the state, rate, and rank columns. Use a pipe %>% to do this in just one line.
 
 ```{r}
+library(pander)
 library(dplyr)
-pander(murders)
 murders <- mutate(murders, rate =  total / population * 100000, rank = rank(-rate))
-filter(murders, region %in% c("Northeast", "West")&rate<1)%>%
-  select(state,rate,rank)
+pander(filter(murders, region %in% c("Northeast", "West")&rate<1)%>%select(state,rate,rank))
+
 ```
 2. Reset murders to the original table by using data(murders). Use a pipe to create a new data frame called my_states that considers only states in the Northeast or West which have a murder rate lower than 1, and contains only the state, rate and rank columns. The pipe should also have four components separated by three %>%. The code should look something like this:
 
 ```{r}
-pander(murders)
+library(pander)
+library(dplyr)
+data(murders)
 my_states <- murders %>% mutate (rate=total/murders$population*100000, rank=rank(-rate))%>%filter(region %in% c("Northeast", "West") & rate<1)%>%select(state,rate,rank)
-my_states
+pander(my_states)
 ```
