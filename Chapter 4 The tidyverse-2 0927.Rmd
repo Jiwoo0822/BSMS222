@@ -25,7 +25,8 @@ The following code computes the average and standard deviation for females:
 s <- heights %>%
   filter(sex == "Female")%>%
   summarize(average = mean(height), standard_deviation = sd(height))
-s
+library(pander)
+pander(s)
 ```
 This takes our original data table as input, filters it to keep only females, and then produces a new summarized table with just the average and the standard deviation of heights. We get to choose the names of the columns of the resulting table. For example, above we decided to use average and standard_deviation, but we could have used other names just the same.
 
@@ -46,14 +47,16 @@ murders <- murders%>%
 Remember that the US murder rate is not the average of the state murder rates:
 
 ```{r}
-summarize(murders, mean(rate))
+library(pander)
+pander(summarize(murders, mean(rate)))
 ```
 This is because in the computation above the small states are given the same weight as the large ones. The US murder rate is the total number of murders in the US divided by the total US population. So the correct computation is:
 
 ```{r}
+library(pander)
 us_murder_rate <- murders %>%
   summarize(rate=sum(total)/sum(population)*100000)
-us_murder_rate
+pander(us_murder_rate)
 ```
 This computation counts larger states proportionally to their size which results in a larger value.
 
@@ -65,9 +68,10 @@ But we can obtain these three values with just one line using the quantile funct
 
 
 ```{r}
-heights %>%
+library(pander)
+pander(heights %>%
   filter(sex == "Female") %>%
-  summarize(median_min_max = quantile(height, c(0.5,0,1)))
+  summarize(median_min_max = quantile(height, c(0.5,0,1))))
 ```
 However, notice that the summaries are returned in a row each. To obtain the results in different columns, we have to define a function that returns a data frame like this:
 
@@ -76,9 +80,10 @@ median_min_max <- function(x){
   qs <- quantile(x, c(0.5,0,1))
   data.frame(median = qs[1], minimum = qs[2], max = qs[3])
 }
-heights%>%
+library(pander)
+pander(heights%>%
   filter(sex == "Female")%>%
-  summarize(median_min_max(height))
+  summarize(median_min_max(height)))
 ```
 In the next section we learn how useful this approach can be when summarizing by group.
 
@@ -89,23 +94,26 @@ A common operation in data exploration is to first split data into groups and th
 If we type this:
 
 ```{r}
-heights %>% group_by(sex)
+library(pander)
+pander(heights %>% group_by(sex))
 ```
 The result does not look very different from heights, except we see Groups: sex [2] when we print the object. Although not immediately obvious from its appearance, this is now a special data frame called a grouped data frame, and dplyr functions, in particular summarize, will behave differently when acting on this object. Conceptually, you can think of this table as many tables, with the same columns but not necessarily the same number of rows, stacked together in one object. When we summarize the data after grouping, this is what happens:
 
 ```{r}
-heights %>%
+library(pander)
+pander(heights %>%
   group_by(sex) %>%
-  summarize(average=mean(height), standard_deviation =sd(height))
+  summarize(average=mean(height), standard_deviation =sd(height)))
 ```
 The summarize function applies the summarization to each group separately.
 
 For another example, let’s compute the median, minimum, and maximum murder rate in the four regions of the country using the median_min_max defined above:
 
 ```{r}
-murders %>%
+library(pander)
+pander(murders %>%
   group_by(region)%>%
-  summarize(median_min_max(rate))
+  summarize(median_min_max(rate)))
 ```
 ## 4.8 pull
 
@@ -141,38 +149,44 @@ class(us_murder_rate)
 When examining a dataset, it is often convenient to sort the table by the different columns. We know about the order and sort function, but for ordering entire tables, the dplyr function arrange is useful. For example, here we order the states by population size:
 
 ```{r}
-murders %>%
+library(pander)
+pander(murders %>%
   arrange(population)%>%
-  head()
+  head())
 ```
 With arrange we get to decide which column to sort by. To see the states by murder rate, from lowest to highest, we arrange by rate instead:
 
 ```{r}
-murders %>%
+library(pander)
+pander(murders %>%
   arrange(rate)%>%
-  head()
+  head())
 ```
 Note that the default behavior is to order in ascending order. In dplyr, the function desc transforms a vector so that it is in descending order. To sort the table in descending order, we can type:
 
 ```{r}
-murders %>%
-  arrange(desc(rate))
+library(pander)
+
+pander(murders %>%
+  arrange(desc(rate)))
 ```
 ### 4.9.1 Nested sorting
 
 If we are ordering by a column with ties, we can use a second column to break the tie. Similarly, a third column can be used to break ties between first and second and so on. Here we order by region, then within region we order by murder rate:
 
 ```{r}
-murders %>%
+library(pander)
+pander(murders %>%
   arrange(region, rate) %>%
-  head()
+  head())
 ```
 ### 4.9.2 The top n
 
 In the code above, we have used the function head to avoid having the page fill up with the entire dataset. If we want to see a larger proportion, we can use the top_n function. This function takes a data frame as it’s first argument, the number of rows to show in the second, and the variable to filter by in the third. Here is an example of how to see the top 5 rows:
 
 ```{r}
-murders %>% top_n(5, rate)
+library(pander)
+pander(murders %>% top_n(5, rate))
 ```
 Note that rows are not sorted by rate, only filtered. If we want to sort, we need to use arrange. Note that if the third argument is left blank, top_n filters by the last column.
 
@@ -205,10 +219,11 @@ Let’s now explore the NHANES data.
 Hint: Use filter and summarize and use the na.rm = TRUE argument when computing the average and standard deviation. You can also filter the NA values using filter.
 ```{r}
 library(dplyr)
+library(pander)
 ref <- NHANES %>%
   filter(AgeDecade == " 20-29" & Gender == "female") %>%
   summarize(average = mean(BPSysAve, na.rm = "True"), standard_deviation = sd(BPSysAve, na.rm = "True"))
-ref
+pander(ref)
 class(ref)
 ```
 2. Using a pipe, assign the average to a numeric variable ref_avg. Hint: Use the code similar to above and then pull.
@@ -226,44 +241,56 @@ ref_avg
 min_max <- NHANES %>%
   filter(AgeDecade == " 20-29" & Gender == "female") %>%
   summarize(min_max = quantile(BPSysAve, c(0,1), na.rm = "True"))
-min_max
+library(pander)
+pander(min_max)
 ```
 4. Compute the average and standard deviation for females, but for each age group separately rather than a selected decade as in question 1. Note that the age groups are defined by AgeDecade. Hint: rather than filtering by age and gender, filter by Gender and then use group_by.
 
 ```{r}
-NHANES %>%
+g <- NHANES %>%
   filter(Gender == "female") %>%
   group_by(AgeDecade) %>%
   summarize(average = mean(BPSysAve, na.rm = "True"), standard_deviation = sd(BPSysAve, na.rm = "True"))
+library(pander)
+pander(g)
 ```
 5. Repeat exercise 4 for males.
 
 ```{r}
-NHANES %>%
+x <- NHANES %>%
   filter(Gender == "male") %>%
   group_by(AgeDecade) %>%
   summarize(average = mean(BPSysAve, na.rm = "True"), standard_deviation = sd(BPSysAve, na.rm = "True"))
+library(pander)
+pander(x)
 ```
 6. We can actually combine both summaries for exercises 4 and 5 into one line of code. This is because group_by permits us to group by more than one variable. Obtain one big summary table using group_by(AgeDecade, Gender).
 
 ```{r}
-NHANES %>% group_by(AgeDecade, Gender) %>% summarize(average = mean(BPSysAve, na.rm = "True"), standard_deviation = sd(BPSysAve, na.rm = "True"))
+d <- NHANES %>% group_by(AgeDecade, Gender) %>% summarize(average = mean(BPSysAve, na.rm = "True"), standard_deviation = sd(BPSysAve, na.rm = "True"))
+library(pander)
+pander(d)
 ```
 7. For males between the ages of 40-49, compare systolic blood pressure across race as reported in the Race1 variable. Order the resulting table from lowest to highest average systolic blood pressure.
 
 ```{r}
-NHANES %>% 
+library(pander)
+
+cdf <- NHANES %>% 
   filter(AgeDecade == " 40-49", Gender == "male") %>%
   group_by(Race1) %>%
   summarize(average = mean(BPSysAve, na.rm = "True"))%>%
   arrange(average)
+pander(cdf)
 ```
 ## 4.11 Tibbles
 
 Tidy data must be stored in data frames. We introduced the data frame in Section 2.4.1 and have been using the murders data frame throughout the book. In Section 4.7.3 we introduced the group_by function, which permits stratifying data before computing summary statistics. But where is the group information stored in the data frame?
 
 ```{r}
-murders %>% group_by(region)
+library(pander)
+murders_3 <- murders %>% group_by(region)
+pander(murders_3)
 ```
 Notice that there are no columns with this information. But, if you look closely at the output above, you see the line A tibble followd by dimensions. We can learn the class of the returned object using:
 
@@ -278,7 +305,8 @@ Tibbles are very similar to data frames. In fact, you can think of them as a mod
 
 The print method for tibbles is more readable than that of a data frame. To see this, compare the outputs of typing murders and the output of murders if we convert it to a tibble. We can do this using as_tibble(murders). If using RStudio, output for a tibble adjusts to your window size. To see this, change the width of your R console and notice how more/less columns are shown.
 ```{r}
-as_tibble(murders)
+library(pander)
+pander(as_tibble(murders))
 ```
 ### 4.11.2 Subsets of tibbles are tibbles
 
@@ -314,7 +342,10 @@ as_tibble(murders)$Population
 While data frame columns need to be vectors of numbers, strings, or logical values, tibbles can have more complex objects, such as lists or functions. Also, we can create tibbles with functions:
 
 ```{r}
+
+
 tibble(id = c(1,2,3), func = c(mean, median,sd))
+
 ```
 ### 4.11.4 Tibbles can be grouped
 
@@ -436,7 +467,8 @@ case_when(x <0 ~ "Negative",
 A common use for this function is to define categorical variables based on existing variables. For example, suppose we want to compare the murder rates in four groups of states: New England, West Coast, South, and other. For each state, we need to ask if it is in New England, if it is not we ask if it is in the West Coast, if not we ask if it is in the South, and if not we assign other. Here is how we use case_when to do this:
 
 ```{r}
-murders %>%
+library(pander)
+df_ <- murders %>%
   mutate(group = case_when(
     abb %in% c ("ME", "NH", "VT", "MA", "RI", "CT") ~ "New England",
     abb %in% c ("WA", "OR", "CA") ~ "West Coast",
@@ -444,6 +476,7 @@ murders %>%
     TRUE ~ "Other")) %>%
   group_by(group) %>%
   summarize(rate = sum(total)/sum(population) *100000)
+pander(df_)
 ```
 ### 4.14.2 between
 
@@ -467,9 +500,10 @@ c. murders is not in tidy format and is stored in a tibble.
 d. murders is not in tidy format and is stored in a data frame.
 
 ```{r}
+library(pander)
 library(dslabs)
 data(murders)
-murders
+pander(murders)
 class(murders)
 
 # answer - b
@@ -477,8 +511,9 @@ class(murders)
 2. Use as_tibble to convert the murders data table into a tibble and save it in an object called murders_tibble.
 
 ```{r}
+library(pander)
 murders_tibble <- as_tibble(murders)
-murders_tibble
+pander(murders_tibble)
 ```
 3. Use the group_by function to convert murders into a tibble that is grouped by region.
 
@@ -507,6 +542,7 @@ murders %>%
 n with n the row number.
 
 ```{r}
+library(pander)
 n_n <- function(n){
   x <- 1:100
   tibble(x)
@@ -527,7 +563,7 @@ tibble_ <-tibble(n = 1: 100,
                map_df(1:100, compute_s_n),
                map_df(1:100, compute_s_n_2))
 
-tibble_
+pander(tibble_)
 
 ```
 
