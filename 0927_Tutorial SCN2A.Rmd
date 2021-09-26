@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "0927_Tutorial_SCN2A"
 output:
   html_document:
     df_print: paged
