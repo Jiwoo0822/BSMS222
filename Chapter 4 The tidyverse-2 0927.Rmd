@@ -484,8 +484,7 @@ murders_tibble
 
 ```{r}
 murders_t<-murders %>%
-  group_by(region)%>%
-  count()
+  group_by(region)
 class(murders_t)
 
 
@@ -516,14 +515,20 @@ n <- map_df(n, n_n)
 
 compute_s_n <- function(n){
   x <- 1:n
-  tibble(sum=sum(x))
+  tibble(s_n = sum(x))
 }
-s_n <- map_df(n, compute_s_n)
-s_n_2 <- map_df(n, compute_s_n)
 
-n
-s_n
-s_n_2
+compute_s_n_2 <- function(n){
+  x <- 1:n
+  tibble(s_n_2 = sum(x))
+}
+
+tibble_ <-tibble(n = 1: 100,
+               map_df(1:100, compute_s_n),
+               map_df(1:100, compute_s_n_2))
+
+tibble_
+
 ```
 
 
