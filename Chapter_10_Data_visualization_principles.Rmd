@@ -287,7 +287,7 @@ Graphs can be used for 1) our own exploratory data analysis, 2) to convey a mess
 
 As a simple example, consider that for your own exploration it may be more useful to log-transform data and then plot it. However, for a general audience that is unfamiliar with converting logged values back to the original measurements, using a log-scale for the axis instead of log-transformed values will be much easier to digest.
 
-##10.13 Exercises
+## 10.13 Exercises
 
 For these exercises, we will be using the vaccines data in the dslabs package:
 
