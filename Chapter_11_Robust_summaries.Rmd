@@ -94,6 +94,9 @@ x <- outlier_example[outlier_example < max_height]
 qqnorm(x)
 qqline(x)
 ```
+
+
+
 ## 11.5 Median absolute deviation
 
 Another way to robustly estimate the standard deviation in the presence of outliers is to use the median absolute deviation (MAD). To compute the MAD, we first compute the median, and then for each value we compute the distance between that value and the median. The MAD is defined as the median of these distances. For technical reasons not discussed here, this quantity needs to be multiplied by 1.4826 to assure it approximates the actual standard deviation. The mad function already incorporates this correction. For the height data, we get a MAD of:
