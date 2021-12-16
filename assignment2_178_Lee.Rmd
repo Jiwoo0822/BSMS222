@@ -516,7 +516,7 @@ Finally, let's print plot for Figure 1.
 
 * According to feedback from peer review I modified x-axis scales by regulating fig.height and fig.width since mid-term portfolio’s Figure 1 was inconvenient to interpret expression patterns according to tumor stage without zooming. Surprisingly, contrary to my expectations, each length was reduced(‘fig.width = 33, fig.height = 45’ -> ‘fig.width = 15, fig.height = 25’) to show better.
 
-```{r warning = FALSE, message = FALSE, fig.width = 15, fig.height = 25}
+```{r warning = FALSE, message = FALSE, fig.width = 15, fig.height = 20}
 plot_grid(graph1, graph6, graph11, graph2, graph7, graph12, graph3, graph8, graph13, graph4, graph9, graph14, graph5, graph10, graph15, ncol = 3, labels = c('1A', '2A', '3A', '1B', '2B', '3B', '1C', '2C', '3C', '1D', '2D', '3D', '1E', '2E', '3E'))
 ```
 
