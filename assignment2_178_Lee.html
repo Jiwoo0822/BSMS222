@@ -317,7 +317,7 @@ numericvars3 %&gt;%
 <p>These are NSLC_6A_pro(1,2,3) indices of genes that I want to study. It is to be noted that the difference between index of same column of NSLC_6A_pro(1,2,3) and NSLC_6A is 8.</p>
 </div>
 <div id="about-the-genes" class="section level2">
-<h2>3-2.About the genes</h2>
+<h2>3-2. About the genes</h2>
 <ul>
 <li>According to feedback from peer review I added explanation of each gene.</li>
 </ul>
@@ -700,7 +700,7 @@ NSLC_1E &lt;- merge(
 )</code></pre>
 </div>
 <div id="visualizing-data-1" class="section level2">
-<h2>4-2 Visualizing Data</h2>
+<h2>4-2. Visualizing Data</h2>
 <p>Now, let’s make plots.</p>
 <p>*Here, unlike mid-term portfolio’s Figure 2, only patients corresponding to each subtype obtained in the previous data ‘NSLC_6A’ were extracted and proceeded from ‘NSLC_1D’. Previously. log2T/N values of each of the 5 genes were visualized for all patients in data ‘NSLC_1D’ as it did not seem appropriate to compare the expression of each subtype.</p>
 <pre class="r"><code>#mRNA expression
@@ -861,7 +861,7 @@ colnames(NSLC_6A_3) = c(&quot;ID&quot;,&quot;proteome_subtype&quot;, &quot; FGF2
 #to design heatmap more efficiently use pivot_longer()
 NSLC_6A_3long &lt;- pivot_longer(data = NSLC_6A_3, cols = starts_with(&#39; &#39;), names_to = &quot;Gene&quot;, values_to = &quot;values&quot;)</code></pre>
 <div id="about-the-pathway-and-gene" class="section level2">
-<h2>5-2.About the pathway and gene</h2>
+<h2>5-2. About the pathway and gene</h2>
 <ol style="list-style-type: decimal">
 <li>PI3K-Akt signaling pathway</li>
 </ol>

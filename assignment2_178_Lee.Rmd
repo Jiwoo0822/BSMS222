@@ -141,7 +141,7 @@ numericvars3 %>%
 These are NSLC_6A_pro(1,2,3) indices of genes that I want to study. 
 It is to be noted that the difference between index of same column of NSLC_6A_pro(1,2,3) and NSLC_6A is 8. 
 
-## 3-2.About the genes
+## 3-2. About the genes
 
 * According to feedback from peer review I added explanation of each gene. 
 
@@ -564,7 +564,7 @@ NSLC_1E <- merge(
 )
 ```
 
-## 4-2 Visualizing Data
+## 4-2. Visualizing Data
 
 Now, let's make plots.
 
@@ -738,7 +738,7 @@ colnames(NSLC_6A_3) = c("ID","proteome_subtype", " FGF2", " FGFR4", " GNG12", " 
 NSLC_6A_3long <- pivot_longer(data = NSLC_6A_3, cols = starts_with(' '), names_to = "Gene", values_to = "values")
 ```
 
-## 5-2.About the pathway and gene
+## 5-2. About the pathway and gene
 
 1) PI3K-Akt signaling pathway
 
