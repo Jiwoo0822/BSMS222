@@ -1,0 +1,836 @@
+---
+title: "Investigate differences of highly expressed genes in each proteome subtype"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Jiwoo, Lee 2019250178
+
+# 1. Introduction
+
+## 1-1. Background
+
+Lung cancer is a type of cancer that begins in the lungs and has a high mortality rate among cancers. These lung cancers are usually known to be caused by smoking. However, this paper, Chen et al (2020), observed a high percentage of the lung cancer patients in East Asia regions (TW cohort) are non-smokers. Furthermore, the proportion of females among the patients was overwhelmingly high, and the study found that there was a difference in mutagenesis mechanisms between younger and older females.
+This paper, to study about early stage LUAD(lung adenocarcinoma) it used unsupervised consensus clustering (Wilkerson and Hayes, 2010) and classified adenocarcinoma patients of TW cohort into molecular subtypes. There are three proteomic, three RNA, and four phosphoproteomic subtypes. After classifiying it, the paper analysis each subtypes characteristics. And I was particularly interested in three proteomic subtypes and this paper also paid attention to proteomic subtypes. According to sorted proteomic subtypes it showed a high separation by tumor staging. Subtype 1, over-represents late stage tumors(>=II), tumors with TP53 mutations and showed the highest mutational burden. Subtype 2, consists of early stage patients (mostly IA and IB) without EGFR-L858R mutations. Subtype 3, over-represents of early stage (stage IA) with highly lacking TP53 mutations.  
+
+## 1-2. [Portfolio] 'Visualize this' - Topic
+
+Here, my visualized plots were started from my curiousity 'what genes are especially highly expressed in each proteome subtype?'. Accordingly, I calculated the average expression amount of patients for each gene for each proteome subtype and extracted a total of 15 genes, 5 genes showing the highest average expression amount.Therefore, Figure 1 was completed by visualizing the expression amount of each gene according to gender and stage. Subsequently, Figure 2 was created by visualizing the 15 genes's log2T/N of 'mRNA expression' and 'proteome expression' according to gender and stage.
+This is the summary of the plot I submitted as an intermediate exam portfolio. In this final exam portfolio, the feedback received through peer review was reflected, such as revising the stage classification criteria, adding intermediate values and averages, and adding more specific plot analysis so that the meaning of Figure 1 and Figure 2 can be conveyed better. Where feedback reflected will be mentioned in the text with '*'. 
+Lastly, it was regrettable that the gene expression for each proteome subtype was progressed with too few genes. So, I made a new plot to visualize PI3K-Akt signaling pathway-related genes expression by each proteome subtype. The reason for selecting genes related to PI3K-Akt signaling pathway will be discussed in detail later.
+
+
+# 2. Importing Data
+
+Let's load all packages before get start.
+
+```{r warning = FALSE, message = FALSE}
+#loading packages that we need for creating plots
+#install.packages("ggside")
+#install.packages('rio')
+library(ggside)
+library(tidyverse)
+library(readxl)
+library(plyr)
+library(ggridges)
+library(cowplot)
+```
+
+Then let's import data from the website of the paper (Chen et al, 2020) by using rio::. 
+
+```{r warning = FALSE, message = FALSE}
+#Import data from the paper tables
+
+#data of TW cohort lung cancer patients
+NSLC_1A = rio::import('https://ars.els-cdn.com/content/image/1-s2.0-S0092867420307431-mmc1.xlsx', sheet = 2)
+#data of mRNA expression results
+NSLC_1D = rio::import('https://ars.els-cdn.com/content/image/1-s2.0-S0092867420307431-mmc1.xlsx', sheet = 5)
+#data of proteomic expression results(normalized by patient median)
+NSLC_1E = rio::import('https://ars.els-cdn.com/content/image/1-s2.0-S0092867420307431-mmc1.xlsx', sheet = 6, na = "NA")
+#data of differentially regulated proteins in each subtypes
+NSLC_6A = rio::import('https://ars.els-cdn.com/content/image/1-s2.0-S0092867420307431-mmc6.xlsx', sheet = 2)
+```
+
+# 3. Figure 1
+
+Figure 1 visualized the expression amount of each gene (top 5 genes showing the highest average expression amount in each three proteome subtype) according to gender and stage.
+
+## 3-1. Manipulating Data 
+
+Before modifying the data according to the purpose, I classified the patient ID for each proteome subtype. This will be used for visualizing Figure 2. It will be mentioned again with detail later.
+
+```{r warning = FALSE, message = FALSE}
+#extracting patients information from each data because there patients are different 
+NSLC_6A %>% names()
+# proteome subtype 1 patients
+#"P072", "P102", "P101", "P097", "P098", "P077", "P062", "P043", "P109", "P017", "P039", "P044", "P085", "P049", "P081", "P063", "P002", "P045", "P111", "P103",  "P059", "P088", "P075", "P110", "P068", "P029", "P080", "P086", "P010", "P092","P022", "P067", "P037", "P009", "P095", "P031", "P050", "P042", "P053", "P082",   "P054", "P093", "P099", "P007", "P040", "P100", "P064", "P056", "P034", "P024"
+#proteome subtype 2 patients
+# "P066","P061", "P071", "P060", "P016", "P012", "P006", "P023", "P073", "P104", "P057"
+#proteome subtype 3 patients
+# "P036", "P032", "P027", "P089", "P055", "P013", "P052", "P020", "P094", "P090", "P076", "P025", "P112", "P028", "P019", "P030", "P015", "P011", "P033", "P051", "P026", "P070"
+```
+Then, I edited the NSLC_6A by making tidy format and extracting columns that I need for analysis. 
+
+```{r warning = FALSE, message = FALSE}
+#editing NSLC_6A for proteome subtype analysis
+NSLC_6A <- t(NSLC_6A)
+NSLC_6A <- as.data.frame(NSLC_6A)
+colnames(NSLC_6A)<-NSLC_6A[1,]
+NSLC_6A<-NSLC_6A[-c(1,3,4,5),-c(9:15)]
+NSLC_6A<-NSLC_6A[,-c(10:72)]
+NSLC_6A_pro <- NSLC_6A[-c(1),-c(2:9)]
+```
+
+
+```{r warning = FALSE, message = FALSE}
+#filtering proteome subtype 1
+NSLC_6A_pro1 <- NSLC_6A_pro %>%
+  filter(`proteome_k3 (out of k4)` == 1)
+
+numericvars1 <- NULL
+
+#calculating average expression amount of patients for each gene of proteome subtype 1  
+for(i in 2:ncol(NSLC_6A_pro1)) {       
+  NSLC_6A_pro1[,i] <- as.numeric(NSLC_6A_pro1[,i])
+  numericvars1[i] <- mean(NSLC_6A_pro1[,i], na.rm=TRUE)
+}
+
+#extracting 5 genes with the highest expression on average in subtype 1
+numericvars1 %>%
+  as.data.frame() %>%
+  order(decreasing = TRUE) %>%
+  head(5)
+
+#filtering proteome subtype 2
+NSLC_6A_pro2 <- NSLC_6A_pro %>%
+  filter(`proteome_k3 (out of k4)` == 2) 
+
+numericvars2 <- NULL
+
+#calculating average expression amount of patients for each gene of proteome subtype 2
+for(i in 2:ncol(NSLC_6A_pro2)) {       
+  NSLC_6A_pro2[,i] <- as.numeric(NSLC_6A_pro2[,i])
+  numericvars2[i] <- mean(NSLC_6A_pro2[,i], na.rm=TRUE)
+}
+
+#extracting 5 genes with the highest expression on average in subtype 2
+numericvars2 %>%
+  as.data.frame() %>%
+  order(decreasing = TRUE) %>%
+  head(5)
+
+#filtering proteome subtype 3
+NSLC_6A_pro3 <- NSLC_6A_pro %>%
+  filter(`proteome_k3 (out of k4)` == 3) 
+
+numericvars3 <- NULL
+
+#calculating average expression amount of patients for each gene of proteome subtype 3
+for(i in 2:ncol(NSLC_6A_pro3)) {       
+  NSLC_6A_pro3[,i] <- as.numeric(NSLC_6A_pro3[,i])
+  numericvars3[i] <- mean(NSLC_6A_pro3[,i], na.rm=TRUE)
+}
+
+#extracting 5 genes with the highest expression on average in subtype 3
+numericvars3 %>%
+  as.data.frame() %>%
+  order(decreasing = TRUE) %>%
+  head(5)
+```
+These are NSLC_6A_pro(1,2,3) indices of genes that I want to study. 
+It is to be noted that the difference between index of same column of NSLC_6A_pro(1,2,3) and NSLC_6A is 8. 
+
+## 3-2.About the genes
+
+* According to feedback from peer review I added explanation of each gene. 
+
+Before visualizing data let's look for each gene.
+
+1) CPA3(carboxypeptidase A3)
+
+This gene encodes a member of the carboxypeptidase A family of zinc metalloproteases. The encoded preproprotein is proteolytically processed to generate a mature protease that is released by mast cells and may be involved in the degradation of endogenous proteins and the inactivation of venom-associated peptides. Expression of this gene may be elevated in human asthma patients. [provided by RefSeq, Nov 2015]
+
+https://www.ncbi.nlm.nih.gov/gene/1359
+
+2) CMA1(chymase 1)
+
+This gene encodes a chymotryptic serine proteinase that belongs to the peptidase family S1. It is expressed in mast cells and is thought to function in the degradation of the extracellular matrix, the regulation of submucosal gland secretion, and the generation of vasoactive peptides. In the heart and blood vessels, this protein, rather than angiotensin converting enzyme, is largely responsible for converting angiotensin I to the vasoactive peptide angiotensin II. Alternative splicing results in multiple variants. [provided by RefSeq, Apr 2015]
+
+https://www.ncbi.nlm.nih.gov/gene/1215
+
+3) MFAP4 (microfibril associated protein 4 )
+
+This gene encodes a protein with similarity to a bovine microfibril-associated protein. The protein has binding specificities for both collagen and carbohydrate. It is thought to be an extracellular matrix protein which is involved in cell adhesion or intercellular interactions. The gene is located within the Smith-Magenis syndrome region. Two transcript variants encoding different isoforms have been found for this gene. [provided by RefSeq, Nov 2010]
+
+https://www.ncbi.nlm.nih.gov/gene/4239
+
+4) CA3 (carbonic anhydrase 3)
+
+Carbonic anhydrase III (CAIII) is a member of a multigene family (at least six separate genes are known) that encodes carbonic anhydrase isozymes. These carbonic anhydrases are a class of metalloenzymes that catalyze the reversible hydration of carbon dioxide and are differentially expressed in a number of cell types. The expression of the CA3 gene is strictly tissue specific and present at high levels in skeletal muscle and much lower levels in cardiac and smooth muscle. A proportion of carriers of Duchenne muscle dystrophy have a higher CA3 level than normal. The gene spans 10.3 kb and contains seven exons and six introns. [provided by RefSeq, Oct 2008]
+
+https://www.ncbi.nlm.nih.gov/gene/761
+
+5) SERPINB7 (serpin family B member 7)
+
+This gene encodes a member of a family of proteins which function as protease inhibitors. Expression of this gene is upregulated in IgA nephropathy and mutations have been found to cause palmoplantar keratoderma, Nagashima type. Alternative splicing results in multiple transcript variants. [provided by RefSeq, Jun 2014]
+
+https://www.ncbi.nlm.nih.gov/gene/8710
+
+6) SFRP2 (secreted frizzled related protein 2)
+
+This gene encodes a member of the SFRP family that contains a cysteine-rich domain homologous to the putative Wnt-binding site of Frizzled proteins. SFRPs act as soluble modulators of Wnt signaling. Methylation of this gene is a potential marker for the presence of colorectal cancer. [provided by RefSeq, Jul 2008]
+
+https://www.ncbi.nlm.nih.gov/gene/6423
+
+7) CILP (cartilage intermediate layer protein)
+
+Major alterations in the composition of the cartilage extracellular matrix occur in joint disease, such as osteoarthrosis. This gene encodes the cartilage intermediate layer protein (CILP), which increases in early osteoarthrosis cartilage. The encoded protein was thought to encode a protein precursor for two different proteins; an N-terminal CILP and a C-terminal homolog of NTPPHase, however, later studies identified no nucleotide pyrophosphatase phosphodiesterase (NPP) activity. The full-length and the N-terminal domain of this protein was shown to function as an IGF-1 antagonist. An allelic variant of this gene has been associated with lumbar disc disease. [provided by RefSeq, Sep 2010]
+
+https://www.ncbi.nlm.nih.gov/gene/8483
+
+8) VSTM2L (V-Set And Transmembrane Domain Containing 2 Like)
+
+VSTM2L (V-Set And Transmembrane Domain Containing 2 Like) is a Protein Coding gene. Diseases associated with VSTM2L include Spinocerebellar Ataxia 14. An important paralog of this gene is BSG.
+
+https://www.genecards.org/cgi-bin/carddisp.pl?gene=VSTM2L&keywords=VSTM2L
+
+9) THBS2 (thrombospondin 2)
+
+The protein encoded by this gene belongs to the thrombospondin family. It is a disulfide-linked homotrimeric glycoprotein that mediates cell-to-cell and cell-to-matrix interactions. This protein has been shown to function as a potent inhibitor of tumor growth and angiogenesis. Studies of the mouse counterpart suggest that this protein may modulate the cell surface properties of mesenchymal cells and be involved in cell adhesion and migration. [provided by RefSeq, Jul 2008]
+
+https://www.ncbi.nlm.nih.gov/gene/7058
+
+10) COL11A1 (collagen type XI alpha 1 chain)
+
+This gene encodes one of the two alpha chains of type XI collagen, a minor fibrillar collagen. Type XI collagen is a heterotrimer but the third alpha chain is a post-translationally modified alpha 1 type II chain. Mutations in this gene are associated with type II Stickler syndrome and with Marshall syndrome. A single-nucleotide polymorphism in this gene is also associated with susceptibility to lumbar disc herniation. Multiple transcript variants have been identified for this gene. [provided by RefSeq, Nov 2009]
+
+https://www.ncbi.nlm.nih.gov/gene/1301
+
+11) CLDN18 (claudin 18)
+
+This gene encodes a member of the claudin family. Claudins are integral membrane proteins and components of tight junction strands. Tight junction strands serve as a physical barrier to prevent solutes and water from passing freely through the paracellular space between epithelial or endothelial cell sheets, and also play critical roles in maintaining cell polarity and signal transductions. This gene is upregulated in patients with ulcerative colitis and highly overexpressed in infiltrating ductal adenocarcinomas. PKC/MAPK/AP-1 (protein kinase C/mitogen-activated protein kinase/activator protein-1) dependent pathway regulates the expression of this gene in gastric cells. Alternatively spliced transcript variants encoding different isoforms have been identified. [provided by RefSeq, Jun 2010]
+
+https://www.ncbi.nlm.nih.gov/gene/51208
+
+12) SDR16C5 (short chain dehydrogenase/reductase family 16C member 5) 
+
+This gene encodes a member of the short-chain alcohol dehydrogenase/reductase superfamily of proteins and is involved in the oxidation of retinol to retinaldehyde. The encoded protein is associated with the endoplasmic reticulum and is predicted to contain three transmembrane helices, suggesting that it is an integral membrane protein. It recognizes all-trans-retinol and all-trans-retinaldehyde as substrates and exhibits a strong preference for NAD(+)/NADH as cofactors. Alternative splicing results in multiple transcript variants. [provided by RefSeq, Dec 2015]
+
+https://www.ncbi.nlm.nih.gov/gene/195814
+
+13) CTSE (cathepsin E)
+
+This gene encodes a member of the A1 family of peptidases. Alternative splicing of this gene results in multiple transcript variants. At least one of these variants encodes a preproprotein that is proteolytically processed to generate the mature enzyme. This enzyme, an aspartic endopeptidase, may be involved in antigen processing and the maturation of secretory proteins. Elevated expression of this gene has been observed in neurodegeneration. [provided by RefSeq, Nov 2015]
+
+https://www.ncbi.nlm.nih.gov/gene/1510
+
+14) S100A14 (S100 calcium binding protein A14)
+
+This gene encodes a member of the S100 protein family which contains an EF-hand motif and binds calcium. The gene is located in a cluster of S100 genes on chromosome 1. Levels of the encoded protein have been found to be lower in cancerous tissue and associated with metastasis suggesting a tumor suppressor function (PMID: 19956863, 19351828). [provided by RefSeq, Dec 2011]
+
+https://www.ncbi.nlm.nih.gov/gene/57402
+
+15) OCLN (occludin)
+
+This gene encodes an integral membrane protein that is required for cytokine-induced regulation of the tight junction paracellular permeability barrier. Mutations in this gene are thought to be a cause of band-like calcification with simplified gyration and polymicrogyria (BLC-PMG), an autosomal recessive neurologic disorder that is also known as pseudo-TORCH syndrome. Alternative splicing results in multiple transcript variants. A related pseudogene is present 1.5 Mb downstream on the q arm of chromosome 5. [provided by RefSeq, Apr 2011]
+
+https://www.ncbi.nlm.nih.gov/gene/100506658
+
+## 3-3. Visualizing Data
+
+Now, within each 'proteome subtype' group of those genes, the amount of gene expression by stage according to gender will be shown through plot.
+
+Let's make plots.
+
+* According to feedback from peer review I inspired to sort stages more efficiently. In midterm exam portfolio I just expressed the x-axis with stage(column name OverallStaging) of the column directly without any manipulating. The problem here is that 'IIA' is only added to the x-axis of subtype 1 differently from the remaining subtypes. And also it did not match the classification by stage pursued in the paper. To compensate for this, I referenced the paper's classification of stage and sorted x-axis 'stage' to 'IA', 'IB', '>=II'.
+
+```{r warning = FALSE, message = FALSE}
+#Proteome subtype 1 gene expression by stage according to gender
+##Gene SFRP2
+graph1 <- NSLC_6A %>%
+  filter(`proteome_k3 (out of k4)` == 1) %>%
+  mutate(OverallStaging =  case_when(
+    OverallStaging == "IA" ~ "IA",
+    OverallStaging == "IB" ~ "IB",
+    TRUE ~ ">=II"
+  )) %>%
+  mutate(Q96HF1= as.numeric(Q96HF1)) %>%
+  ggplot(aes(x = OverallStaging, y = Q96HF1, color = Gender)) +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 1 - Gene SFRP2",
+       x = "Stage",
+       y = "Gene SFRP2") +
+  theme_minimal_grid(12)
+##Gene CILP
+graph2 <- NSLC_6A %>%
+  filter(`proteome_k3 (out of k4)` == 1) %>%
+  mutate(OverallStaging =  case_when(
+    OverallStaging == "IA" ~ "IA",
+    OverallStaging == "IB" ~ "IB",
+    TRUE ~ ">=II"
+  )) %>%
+  mutate(O75339= as.numeric(O75339)) %>%
+  ggplot(aes(x = OverallStaging, y = O75339, color = Gender)) +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 1 - Gene CILP",
+       x = "Stage",
+       y = "Gene CILP") +
+  theme_minimal_grid(12)
+##Gene VSTM2L
+graph3 <- NSLC_6A %>%
+  filter(`proteome_k3 (out of k4)` == 1) %>%
+  mutate(OverallStaging =  case_when(
+    OverallStaging == "IA" ~ "IA",
+    OverallStaging == "IB" ~ "IB",
+    TRUE ~ ">=II"
+  )) %>%
+  mutate(Q96N03= as.numeric(Q96N03)) %>%
+  ggplot(aes(x = OverallStaging, y = Q96N03, color = Gender)) +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 1 - Gene VSTM2L",
+       x = "Stage",
+       y = "Gene VSTM2L") +
+  theme_minimal_grid(12)
+##Gene THBS2
+graph4 <- NSLC_6A %>%
+  filter(`proteome_k3 (out of k4)` == 1) %>%
+  mutate(OverallStaging =  case_when(
+    OverallStaging == "IA" ~ "IA",
+    OverallStaging == "IB" ~ "IB",
+    TRUE ~ ">=II"
+  )) %>%
+  mutate(P35442= as.numeric(P35442)) %>%
+  ggplot(aes(x = OverallStaging, y = P35442, color = Gender)) +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 1 - Gene THBS2",
+       x = "Stage",
+       y = "Gene THBS2") +
+  theme_minimal_grid(12) 
+##Gene COL11A1
+graph5 <- NSLC_6A %>%
+  filter(`proteome_k3 (out of k4)` == 1) %>%
+  mutate(OverallStaging =  case_when(
+    OverallStaging == "IA" ~ "IA",
+    OverallStaging == "IB" ~ "IB",
+    TRUE ~ ">=II"
+  )) %>%
+  mutate(P12107= as.numeric(P12107)) %>%
+  ggplot(aes(x = OverallStaging, y = P12107, color = Gender)) +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 1 - Gene COL11A1",
+       x = "Stage",
+       y = "Gene COL11A1") +
+  theme_minimal_grid(12)
+```
+
+
+```{r warning = FALSE, message = FALSE}
+#manipulate data for better visualized plot for proteome subtype 2
+data1 <- NSLC_6A %>%
+  filter(`proteome_k3 (out of k4)` == 2) %>%
+  mutate(OverallStaging =  case_when(
+    OverallStaging == "IA" ~ "IA",
+    OverallStaging == "IB" ~ "IB",
+    TRUE ~ ">=II"
+  )) %>%
+  mutate(P56856= as.numeric(P56856)) %>%
+  mutate(Q8N3Y7= as.numeric(Q8N3Y7)) %>%
+  mutate(P14091= as.numeric(P14091)) %>%
+  mutate(Q9HCY8= as.numeric(Q9HCY8)) %>%
+  mutate(Q16625= as.numeric(Q16625)) 
+p <- ggplot(rbind(data1, data1), aes(x = OverallStaging, y = P56856, color = Gender))
+q <- ggplot(rbind(data1, data1), aes(x = OverallStaging, y = Q8N3Y7, color = Gender))
+r <- ggplot(rbind(data1, data1), aes(x = OverallStaging, y = P14091, color = Gender))
+s <- ggplot(rbind(data1, data1), aes(x = OverallStaging, y = Q9HCY8, color = Gender))
+t <- ggplot(rbind(data1, data1), aes(x = OverallStaging, y = Q16625, color = Gender))
+```
+
+
+```{r warning = FALSE, message = FALSE}
+#Proteome subtype 2 gene expression by stage according to gender
+##Gene CLDN18
+graph6 <- p +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender))  +
+  labs(title = "Proteome subtype 2 - Gene CLDN18",
+       x = "Stage",
+       y = "Gene CLDN18") +
+  theme_minimal_grid(12)
+##Gene SDR16C5
+graph7 <- q +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 2 - Gene SDR16C5",
+       x = "Stage",
+       y = "Gene SDR16C5") +
+  theme_minimal_grid(12) 
+##Gene CTSE
+graph8 <- r +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 2 - Gene CTSE",
+       x = "Stage",
+       y = "Gene CTSE") +
+  theme_minimal_grid(12)
+##Gene S100A14
+graph9 <- s +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 2 - Gene S100A14",
+       x = "Stage",
+       y = "Gene S100A14") +
+  theme_minimal_grid(12)
+##Gene OCLN
+graph10 <- t+
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 2 - Gene OCLN",
+       x = "Stage",
+       y = "Gene OCLN") +
+  theme_minimal_grid(12)
+```
+
+
+```{r warning = FALSE, message = FALSE}
+#Proteome subtype 3 gene expression by stage according to gender
+##Gene CPA3
+graph11 <- NSLC_6A %>%
+  filter(`proteome_k3 (out of k4)` == 3) %>%
+  mutate(OverallStaging =  case_when(
+    OverallStaging == "IA" ~ "IA",
+    OverallStaging == "IB" ~ "IB",
+    TRUE ~ ">=II"
+  )) %>%
+  mutate(P15088= as.numeric(P15088)) %>%
+  ggplot(aes(x = OverallStaging, y = P15088, color = Gender)) +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 3 - Gene CPA3",
+       x = "Stage",
+       y = "Gene CPA3") +
+  theme_minimal_grid(12) 
+##Gene CMA1
+graph12 <- NSLC_6A %>%
+  filter(`proteome_k3 (out of k4)` == 3) %>%
+  mutate(OverallStaging =  case_when(
+    OverallStaging == "IA" ~ "IA",
+    OverallStaging == "IB" ~ "IB",
+    TRUE ~ ">=II"
+  )) %>%
+  mutate(P23946= as.numeric(P23946)) %>%
+  ggplot(aes(x = OverallStaging, y = P23946, color = Gender)) +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 3 - Gene CMA1",
+       x = "Stage",
+       y = "Gene  CMA1") +
+  theme_minimal_grid(12)
+##Gene MFAP4
+graph13 <- NSLC_6A %>%
+  filter(`proteome_k3 (out of k4)` == 3) %>%
+  mutate(OverallStaging =  case_when(
+    OverallStaging == "IA" ~ "IA",
+    OverallStaging == "IB" ~ "IB",
+    TRUE ~ ">=II"
+  )) %>%
+  mutate(P55083= as.numeric(P55083)) %>%
+  ggplot(aes(x = OverallStaging, y = P55083, color = Gender)) +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 3 - Gene MFAP4",
+       x = "Stage",
+       y = "Gene MFAP4") +
+  theme_minimal_grid(12)
+##Gene CA3
+graph14 <- NSLC_6A %>%
+  filter(`proteome_k3 (out of k4)` == 3) %>%
+  mutate(OverallStaging =  case_when(
+    OverallStaging == "IA" ~ "IA",
+    OverallStaging == "IB" ~ "IB",
+    TRUE ~ ">=II"
+  )) %>%
+  mutate(P07451= as.numeric(P07451)) %>%
+  ggplot(aes(x = OverallStaging, y = P07451, color = Gender)) +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 3 - Gene CA3",
+       x = "Stage",
+       y = "Gene CA3") +
+  theme_minimal_grid(12) 
+##Gene SERPINB7
+graph15 <- NSLC_6A %>%
+  filter(`proteome_k3 (out of k4)` == 3) %>%
+  mutate(OverallStaging =  case_when(
+    OverallStaging == "IA" ~ "IA",
+    OverallStaging == "IB" ~ "IB",
+    TRUE ~ ">=II"
+  )) %>%
+  mutate(O75635= as.numeric(O75635)) %>%
+  ggplot(aes(x = OverallStaging, y = O75635, color = Gender)) +
+  geom_violin(scale = "width", alpha = 0.3, adjust = 0.5, aes(fill = Gender)) +
+  geom_boxplot(position = position_dodge(0.9), width = 0.2) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, seed = 12), alpha = 0.9) +
+  stat_summary(fun="mean", geom="point",shape = 23, size=5, aes(fill = Gender)) +
+  labs(title = "Proteome subtype 3 - Gene SERPINB7",
+       x = "Stage",
+       y = "Gene SERPINB7") +
+  theme_minimal_grid(12) 
+
+```
+
+Finally, let's print plot for Figure 1.
+
+* According to feedback from peer review I modified x-axis scales by regulating fig.height and fig.width since mid-term portfolio’s Figure 1 was inconvenient to interpret expression patterns according to tumor stage without zooming. Surprisingly, contrary to my expectations, each length was reduced(‘fig.width = 33, fig.height = 45’ -> ‘fig.width = 15, fig.height = 25’) to show better.
+
+```{r warning = FALSE, message = FALSE, fig.width = 15, fig.height = 25}
+plot_grid(graph1, graph6, graph11, graph2, graph7, graph12, graph3, graph8, graph13, graph4, graph9, graph14, graph5, graph10, graph15, ncol = 3, labels = c('1A', '2A', '3A', '1B', '2B', '3B', '1C', '2C', '3C', '1D', '2D', '3D', '1E', '2E', '3E'))
+```
+
+*The analysis in the previous portfolio seemed insufficient, so I analyzed it in more detail(not only gender but also stage) according to the feedback.
+
+The genes expression was expressed in various ways (average, median, geom_point(). etc), and typically, based on the average value, the difference in expression volume between stages of genes by subtype was analyzed. 
+As a result of visualization, there was little difference in expression amount between genders in stage '>=II' in proteome subtype 1. On the other hand, the difference in expression amount between genders in the remaining stages 'IA' and 'IB' is relatively clearly observed. In particular, the difference in expression amount in stage 'IA' was the most pronounced, and overall, men showed higher expression amount than women.
+Next, in proteome subtype 2, it is difficult to compare between genders because there is no male information among patients corresponding to stage '>=II'. In stage 'IA', there was a difference in expression amount between genders in some genes. In "gene S100A14", women showed higher expression than men, and in "gene OCLN", men showed higher expression than women. In stage 'IB', the difference in expression amount between genders was relatively clear, and in the rest of the genes except 'gen CLDN18', the expression amount was higher in men than in women. However, subtype 2 seems difficult to conclude because there are not enough samples.
+Finally, in "protome subtype 3", like subtype 2, it is impossible to compare between genders because there is no male information among patients corresponding to stage ">=II". In stage 'IA', it was confirmed that there was no significant gender difference for each gene, or that the expression rate in men was slightly higher than in women. In stage "IB", it was confirmed that the difference in expression between genders in "gene MFAP4" was not large. And men in "gene CA3" showed higher expression than women, and women in the rest of the genes showed higher expression than men.
+
+# 4. Figure 2
+
+Figure 2 visualized log2T/N distribution of 'mRNA expression' and 'proteome expression' by stage per genders from the selected top 5 genes above which showed the highest average value from the each proteome subtype.
+
+## 4-1. Manipulating Data 
+
+To find out this conveniently, we will extract the genes selected above and manipulate the data.
+
+```{r warning = FALSE, message = FALSE}
+#remove unnecessary columns for visualizing Figure 2 in NSLC_1A
+NSLC_1A <- NSLC_1A[,-c(2,4,6,8,9)]
+
+#edit NSLC_1D
+NSLC_1D <- NSLC_1D[,-c(2,3,32)]
+NSLC_1D <- NSLC_1D %>% 
+  filter(gene %in% c("CPA3", "CMA1", "MFAP4", "CA3", "SERPINB7","SFRP2", "CILP", "VSTM2L", "THBS2", "COL11A1", "CLDN18", "SDR16C5", "CTSE",  "S100A14", "OCLN"))
+NSLC_1D <- pivot_longer(data = NSLC_1D, cols = -gene, names_to = 'ID', values_to = 'log2T/N' )
+NSLC_1D <- merge(
+  x=NSLC_1D,
+  y=NSLC_1A,
+  by='ID',
+  all.x = TRUE
+)
+
+#edit NSLC_1E
+NSLC_1E <- NSLC_1E %>% 
+  filter(Gene %in% c("CPA3", "CMA1", "MFAP4", "CA3", "SERPINB7","SFRP2", "CILP", "VSTM2L", "THBS2", "COL11A1", "CLDN18", "SDR16C5", "CTSE",  "S100A14", "OCLN"))
+NSLC_1E <- NSLC_1E[,-c(1,3)]
+NSLC_1E <- pivot_longer(data = NSLC_1E, cols = -Gene, names_to = 'ID', values_to = 'log2T/N' )
+NSLC_1E <- merge(
+  x=NSLC_1E,
+  y=NSLC_1A,
+  by='ID',
+  all.x = TRUE
+)
+```
+
+## 4-2 Visualizing Data
+
+Now, let's make plots.
+
+*Here, unlike mid-term portfolio’s Figure 2, only patients corresponding to each subtype obtained in the previous data 'NSLC_6A' were extracted and proceeded from 'NSLC_1D'. Previously. log2T/N values of each of the 5 genes were visualized for all patients in data ‘NSLC_1D’ as it did not seem appropriate to compare the expression of each subtype.
+
+```{r warning = FALSE, message = FALSE}
+#mRNA expression
+##Proteome subtype 1 - mRNA expression
+graph16 <- NSLC_1D %>%
+  filter(gene %in% c("SFRP2", "CILP", "VSTM2L", "THBS2", "COL11A1")) %>%
+  filter(ID %in% c("P072", "P102", "P101", "P097", "P098", "P077", "P062", "P043", "P109", "P017", "P039", "P044", "P085", "P049", "P081", "P063", "P002", "P045", "P111", "P103",  "P059", "P088", "P075", "P110", "P068", "P029", "P080", "P086", "P010", "P092","P022", "P067", "P037", "P009", "P095", "P031", "P050", "P042", "P053", "P082",   "P054", "P093", "P099", "P007", "P040", "P100", "P064", "P056", "P034", "P024")) %>%
+  mutate(`Smoking Status` = ifelse(`Smoking Status` == "Nonsmoke", "non-smoker", "smoker")) %>%
+  mutate(Stage = case_when(
+    Stage == "IA" ~ "IA",
+    Stage == "IB" ~ "IB",
+    TRUE ~ ">=III"
+  )) %>%
+  ggplot(aes(x = `log2T/N`, y = Stage, color = Gender)) +
+  geom_density_ridges(aes(fill = Gender), alpha = 0.5) +
+  xlim(-3.5,10) +
+  scale_fill_manual(values = c("#D55E0050", "#0072B250"), labels = c("Female", "Male")) +
+  scale_color_manual(values = c("#D55E00", "#0072B2"), guide = "none") +
+  facet_grid(. ~ `Smoking Status`) +
+  labs(title = "Proteome subtype 1 - mRNA expression",
+       x = "log2T/N",
+       y = "Stage") +
+  theme_minimal_grid(12)
+
+##Proteome subtype 2 - mRNA expression
+graph17 <- NSLC_1D %>%
+  filter(gene %in% c("CLDN18", "SDR16C5", "CTSE",  "S100A14", "OCLN")) %>%
+  filter(ID %in% c( "P066","P061", "P071", "P060", "P016", "P012", "P006", "P023", "P073", "P104", "P057")) %>%
+  mutate(`Smoking Status` = ifelse(`Smoking Status` == "Nonsmoke", "non-smoker", "smoker")) %>%
+  mutate(Stage = case_when(
+    Stage == "IA" ~ "IA",
+    Stage == "IB" ~ "IB",
+    TRUE ~ ">=III"
+  )) %>%
+  ggplot(aes(x = `log2T/N`, Stage, color = Gender)) +
+  geom_density_ridges(aes(fill = Gender), alpha = 0.5) +
+  xlim(-3.5,10) +
+  scale_fill_manual(values = c("#D55E0050", "#0072B250"), labels = c("Female", "Male")) +
+  scale_color_manual(values = c("#D55E00", "#0072B2"), guide = "none") +
+  facet_grid(. ~ `Smoking Status`) +
+  labs(title = "Proteome subtype 2 - mRNA expression",
+       x = "log2T/N",
+       y = "Stage") +
+  theme_minimal_grid(12)
+
+##Proteome subtype 3 - mRNA expression
+graph18 <- NSLC_1D %>%
+  filter(gene %in% c("CPA3", "CMA1", "MFAP4", "CA3", "SERPINB7")) %>%
+  filter(ID %in% c("P036", "P032", "P027", "P089", "P055", "P013", "P052", "P020", "P094", "P090", "P076", "P025", "P112", "P028", "P019", "P030", "P015", "P011", "P033", "P051", "P026", "P070")) %>%
+  mutate(`Smoking Status` = ifelse(`Smoking Status` == "Nonsmoke", "non-smoker", "smoker")) %>%
+  mutate(Stage = case_when(
+    Stage == "IA" ~ "IA",
+    Stage == "IB" ~ "IB",
+    TRUE ~ ">=III"
+  )) %>%
+  ggplot(aes(x = `log2T/N`, y = Stage, color = Gender)) +
+  geom_density_ridges(aes(fill = Gender), alpha = 0.5) +
+  xlim(-3.5,10) +
+  scale_fill_manual(values = c("#D55E0050", "#0072B250"), labels = c("Female", "Male")) +
+  scale_color_manual(values = c("#D55E00", "#0072B2"), guide = "none") +
+  facet_grid(. ~ `Smoking Status`) +
+  labs(title = "Proteome subtype 3 - mRNA expression",
+       x = "log2T/N",
+       y = "Stage") +
+  theme_minimal_grid(12)
+```
+
+
+```{r warning = FALSE, message = FALSE}
+#proteomic expression
+##Proteome subtype 1 - Proteomic expression
+graph19 <- NSLC_1E %>%
+  filter(Gene %in% c("SFRP2", "CILP", "VSTM2L", "THBS2", "COL11A1")) %>%
+  filter(ID %in% c("P072", "P102", "P101", "P097", "P098", "P077", "P062", "P043", "P109", "P017", "P039", "P044", "P085", "P049", "P081", "P063", "P002", "P045", "P111", "P103",  "P059", "P088", "P075", "P110", "P068", "P029", "P080", "P086", "P010", "P092","P022", "P067", "P037", "P009", "P095", "P031", "P050", "P042", "P053", "P082",   "P054", "P093", "P099", "P007", "P040", "P100", "P064", "P056", "P034", "P024")) %>%
+  mutate(`Smoking Status` = ifelse(`Smoking Status` == "Nonsmoke", "non-smoker", "smoker")) %>%
+  mutate(Stage = case_when(
+    Stage == "IA" ~ "IA",
+    Stage == "IB" ~ "IB",
+    TRUE ~ ">=III"
+  )) %>%
+  ggplot(aes(x = `log2T/N`, y = Stage, color = Gender)) +
+  geom_density_ridges(aes(fill = Gender), alpha = 0.5) +
+  xlim(-3.5,10) +
+  scale_fill_manual(values = c("#D55E0050", "#0072B250"), labels = c("Female", "Male")) +
+  scale_color_manual(values = c("#D55E00", "#0072B2"), guide = "none") +
+  facet_grid(. ~ `Smoking Status`) +
+  labs(title = "Proteome subtype 1 - Proteomic expression",
+       x = "log2T/N",
+       y = "Stage") +
+  theme_minimal_grid(12)
+
+##Proteome subtype 2 - Proteomic expression
+graph20 <- NSLC_1E %>%
+  filter(Gene %in% c("CLDN18", "SDR16C5", "CTSE",  "S100A14", "OCLN")) %>%
+  filter(ID %in% c( "P066","P061", "P071", "P060", "P016", "P012", "P006", "P023", "P073", "P104", "P057")) %>%
+  mutate(`Smoking Status` = ifelse(`Smoking Status` == "Nonsmoke", "non-smoker", "smoker")) %>%
+  mutate(Stage = case_when(
+    Stage == "IA" ~ "IA",
+    Stage == "IB" ~ "IB",
+    TRUE ~ ">=III"
+  )) %>%
+  ggplot(aes(x = `log2T/N`, y = Stage, color = Gender)) +
+  geom_density_ridges(aes(fill = Gender), alpha = 0.5) +
+  xlim(-3.5,10) +
+  scale_fill_manual(values = c("#D55E0050", "#0072B250"), labels = c("Female", "Male")) +
+  scale_color_manual(values = c("#D55E00", "#0072B2"), guide = "none") +
+  facet_grid(. ~ `Smoking Status`) +
+  labs(title = "Proteome subtype 2 - Proteomic expression",
+       x = "log2T/N",
+       y = "Stage") +
+  theme_minimal_grid(12)
+
+##Proteome subtype 3 - Proteomic expression
+graph21 <- NSLC_1E %>%
+  filter(Gene %in% c("CPA3", "CMA1", "MFAP4", "CA3", "SERPINB7")) %>%
+  filter(ID %in% c("P036", "P032", "P027", "P089", "P055", "P013", "P052", "P020", "P094", "P090", "P076", "P025", "P112", "P028", "P019", "P030", "P015", "P011", "P033", "P051", "P026", "P070")) %>%
+  mutate(`Smoking Status` = ifelse(`Smoking Status` == "Nonsmoke", "non-smoker", "smoker")) %>%
+  mutate(Stage = case_when(
+    Stage == "IA" ~ "IA",
+    Stage == "IB" ~ "IB",
+    TRUE ~ ">=III"
+  )) %>%
+  ggplot(aes(x = `log2T/N`, y = Stage, color = Gender)) +
+  geom_density_ridges(aes(fill = Gender), alpha = 0.5) +
+  xlim(-3.5,10) +
+  scale_fill_manual(values = c("#D55E0050", "#0072B250"), labels = c("Female", "Male")) +
+  scale_color_manual(values = c("#D55E00", "#0072B2"), guide = "none") +
+  facet_grid(. ~ `Smoking Status`) +
+  labs(title = "Proteome subtype 3 - Proteomic expression",
+       x = "log2T/N",
+       y = "Stage") +
+  theme_minimal_grid(12)
+```
+
+
+```{r warning = FALSE, message = FALSE, fig.width = 10, fig.height = 6}
+plot_grid(graph16, graph19, graph17, graph20, graph18, graph21, ncol = 2, labels = c('1A', '2A', '1B', '2B', '1C', '2C'))
+```
+
+* Feedback was received through peer review for the plot, and quite a few modifications were made. It was pointed out that the previous plot was too complex to interpret. And I think the 'stat = binline' of geom_ridges_density seems to have contributed quite a bit to this complexity. First of all, the reason for using 'stat = binline' was that there are many categories with a small number of samples, so if I code without using 'stat = binline', groups with a small number of samples are not displayed on the plot at all, so information is invisible. As a solution to make information transmission better, a peer suggested displaying an average or median value in each category. Of course, I think this is a good suggestion, but as a result of actually proceeding, the plot became more complex and the information was still not delivered well. Therefore, with the aim of not using 'stat=binline', unlike the previous visualization of 'log2T/N' for each subtype's gene, 'log2T/N' for each stage selected for each subtype was visualized. 
+
+As a result of modifying the code, interpretation became easier. What is surprising is that the difference between gender and 'log2T/N' between stages was not significant for each of the mRNA expression and proteomic expression. In addition, when looking at each of the six plots individually, the log2T/N values of non-smoker and smoker were similar rather than different. One thing to note is that the distribution spectrum of proteomic expression was relatively narrower than that of mRNA expression. Unlike the plot previously visualized by dividing each subtype gene, this final-exam portfolio Figure 2 showed little difference in 'log2T/N' for each category.
+
+# 5. Figure 3
+
+In the process of revising the mid-term portfolio, there was regret, and as a result of reading the paper again, there was a part I wanted to visualize additionally. I will bring a part of the paper. “We identified 1,514 differentially regulated phosphosites between the subtypes (regressed log2T/N values, ANOVA, FDR < 0.1) showing enrichment for pathways in cancer, PI3K-AKT signaling pathway, and cell cycle (Kyoto Encyclopedia of Genes and Genomes [KEGG], Fisher’s exact test, Benj. Hoch. FDR < 0.1, Figure S6B).” As a result of referring to Figure S6B in this part, I wanted to compare the expression amount of PI3K-Akt signaling pathway-related genes by each subtype. The 9 PI3K-Akt signaling pathway-related genes were selected based on Table S3E KEGG. ("FGF2"-"P09038", "FGFR4"-"P22455", "GNG12"-"Q9UBI6", "KIT"-"P10721", "KRAS"-"P01116", "PDGFRB"-"P09619", "PRKCA"-"P17252", "YWHAG"-"P61981", "YWHAH"-"Q04917")
+
+# 5-1. Manipulating Data
+
+```{r warning = FALSE, message = FALSE}
+#select genes related to PI3K-Akt signaling pathway
+NSLC_6A_3 <- NSLC_6A_pro %>%
+  mutate(P09038 = as.numeric(P09038)) %>%
+  mutate(P22455 = as.numeric(P22455)) %>%
+  mutate(Q9UBI6 = as.numeric(Q9UBI6)) %>%
+  mutate(P10721 = as.numeric(P10721)) %>%
+  mutate(P01116 = as.numeric(P01116)) %>%
+  mutate(P09619 = as.numeric(P09619)) %>%
+  mutate(P17252 = as.numeric(P17252)) %>%
+  mutate(P61981 = as.numeric(P61981)) %>%
+  mutate(Q04917 = as.numeric(Q04917)) %>%
+  select(`proteome_k3 (out of k4)`,P09038, P22455, Q9UBI6, P10721, P01116, P09619, P17252, P61981, Q04917) %>%
+  rownames_to_column(var = "ID")
+colnames(NSLC_6A_3) = c("ID","proteome_subtype", " FGF2", " FGFR4", " GNG12", " KIT", " KRAS", " PDGFRB", " PRKCA", " YWHAG", " YWHAH")
+
+#to design heatmap more efficiently use pivot_longer()
+NSLC_6A_3long <- pivot_longer(data = NSLC_6A_3, cols = starts_with(' '), names_to = "Gene", values_to = "values")
+```
+
+## 5-2.About the pathway and gene
+
+1) PI3K-Akt signaling pathway
+
+PI3K-Akt Pathway is an intracellular signal transduction pathway that promotes metabolism, proliferation, cell survival, growth and angiogenesis in response to extracellular signals. This is mediated through serine and/or threonine phosphorylation of a range of downstream substrates.
+
+https://www.creative-diagnostics.com/PI3K-AKT-Signaling-Pathway.htm
+
+2) FGF2 (fibroblast growth factor 2)
+
+The protein encoded by this gene is a member of the fibroblast growth factor (FGF) family. FGF family members bind heparin and possess broad mitogenic and angiogenic activities. This protein has been implicated in diverse biological processes, such as limb and nervous system development, wound healing, and tumor growth. The mRNA for this gene contains multiple polyadenylation sites, and is alternatively translated from non-AUG (CUG) and AUG initiation codons, resulting in five different isoforms with distinct properties. The CUG-initiated isoforms are localized in the nucleus and are responsible for the intracrine effect, whereas, the AUG-initiated form is mostly cytosolic and is responsible for the paracrine and autocrine effects of this FGF. [provided by RefSeq, Jul 2008]
+
+https://www.ncbi.nlm.nih.gov/gene/2247
+
+3) FGFR4 (fibroblast growth factor receptor 4)
+
+The protein encoded by this gene is a tyrosine kinase and cell surface receptor for fibroblast growth factors. The encoded protein is involved in the regulation of several pathways, including cell proliferation, cell differentiation, cell migration, lipid metabolism, bile acid biosynthesis, vitamin D metabolism, glucose uptake, and phosphate homeostasis. This protein consists of an extracellular region, composed of three immunoglobulin-like domains, a single hydrophobic membrane-spanning segment, and a cytoplasmic tyrosine kinase domain. The extracellular portion interacts with fibroblast growth factors, setting in motion a cascade of downstream signals, ultimately influencing mitogenesis and differentiation. [provided by RefSeq, Aug 2017]
+
+https://www.ncbi.nlm.nih.gov/gene/2264
+
+4) GNG12 (Gene - G Protein Subunit Gamma 12)
+
+GNG12 (G Protein Subunit Gamma 12) is a Protein Coding gene. Among its related pathways are Sweet Taste Signaling and Actin Nucleation by ARP-WASP Complex. Gene Ontology (GO) annotations related to this gene include obsolete signal transducer activity and phosphate ion binding. An important paralog of this gene is GNG7.
+
+https://www.genecards.org/cgi-bin/carddisp.pl?gene=GNG12&keywords=GNG12
+
+5) KIT (KIT proto-oncogene, receptor tyrosine kinase)
+
+This gene encodes a receptor tyrosine kinase. This gene was initially identified as a homolog of the feline sarcoma viral oncogene v-kit and is often referred to as proto-oncogene c-Kit. The canonical form of this glycosylated transmembrane protein has an N-terminal extracellular region with five immunoglobulin-like domains, a transmembrane region, and an intracellular tyrosine kinase domain at the C-terminus. Upon activation by its cytokine ligand, stem cell factor (SCF), this protein phosphorylates multiple intracellular proteins that play a role in in the proliferation, differentiation, migration and apoptosis of many cell types and thereby plays an important role in hematopoiesis, stem cell maintenance, gametogenesis, melanogenesis, and in mast cell development, migration and function. This protein can be a membrane-bound or soluble protein. Mutations in this gene are associated with gastrointestinal stromal tumors, mast cell disease, acute myelogenous leukemia, and piebaldism. Multiple transcript variants encoding different isoforms have been found for this gene. [provided by RefSeq, May 2020]
+
+https://www.ncbi.nlm.nih.gov/gene/3815
+
+6) KRAS (KRAS proto-oncogene, GTPase)
+
+This gene, a Kirsten ras oncogene homolog from the mammalian ras gene family, encodes a protein that is a member of the small GTPase superfamily. A single amino acid substitution is responsible for an activating mutation. The transforming protein that results is implicated in various malignancies, including lung adenocarcinoma, mucinous adenoma, ductal carcinoma of the pancreas and colorectal carcinoma. Alternative splicing leads to variants encoding two isoforms that differ in the C-terminal region. [provided by RefSeq, Jul 2008]
+
+https://www.ncbi.nlm.nih.gov/gene/3845
+
+7) PDGFRB (platelet derived growth factor receptor beta)
+
+The protein encoded by this gene is a cell surface tyrosine kinase receptor for members of the platelet-derived growth factor family. These growth factors are mitogens for cells of mesenchymal origin. The identity of the growth factor bound to a receptor monomer determines whether the functional receptor is a homodimer (PDGFB or PDGFD) or a heterodimer (PDGFA and PDGFB). This gene is essential for normal development of the cardiovascular system and aids in rearrangement of the actin cytoskeleton. This gene is flanked on chromosome 5 by the genes for granulocyte-macrophage colony-stimulating factor and macrophage-colony stimulating factor receptor; all three genes may be implicated in the 5-q syndrome. A translocation between chromosomes 5 and 12, that fuses this gene to that of the ETV6 gene, results in chronic myeloproliferative disorder with eosinophilia. [provided by RefSeq, Aug 2017]
+
+https://www.ncbi.nlm.nih.gov/gene/5159
+
+8) PRKCA (protein kinase C alpha)
+
+Protein kinase C (PKC) is a family of serine- and threonine-specific protein kinases that can be activated by calcium and the second messenger diacylglycerol. PKC family members phosphorylate a wide variety of protein targets and are known to be involved in diverse cellular signaling pathways. PKC family members also serve as major receptors for phorbol esters, a class of tumor promoters. Each member of the PKC family has a specific expression profile and is believed to play a distinct role in cells. The protein encoded by this gene is one of the PKC family members. This kinase has been reported to play roles in many different cellular processes, such as cell adhesion, cell transformation, cell cycle checkpoint, and cell volume control. Knockout studies in mice suggest that this kinase may be a fundamental regulator of cardiac contractility and Ca(2+) handling in myocytes. [provided by RefSeq, Jul 2008]
+
+https://www.ncbi.nlm.nih.gov/gene/5578
+
+9) YWHAG (tyrosine 3-monooxygenase/tryptophan 5-monooxygenase activation protein gamma)
+
+This gene product belongs to the 14-3-3 family of proteins which mediate signal transduction by binding to phosphoserine-containing proteins. This highly conserved protein family is found in both plants and mammals, and this protein is 100% identical to the rat ortholog. It is induced by growth factors in human vascular smooth muscle cells, and is also highly expressed in skeletal and heart muscles, suggesting an important role for this protein in muscle tissue. It has been shown to interact with RAF1 and protein kinase C, proteins involved in various signal transduction pathways. [provided by RefSeq, Jul 2008]
+
+https://www.ncbi.nlm.nih.gov/gene/7532
+
+10) YWHAH (tyrosine 3-monooxygenase/tryptophan 5-monooxygenase activation protein eta)
+
+This gene product belongs to the 14-3-3 family of proteins which mediate signal transduction by binding to phosphoserine-containing proteins. This highly conserved protein family is found in both plants and mammals, and this protein is 99% identical to the mouse, rat and bovine orthologs. This gene contains a 7 bp repeat sequence in its 5' UTR, and changes in the number of this repeat have been associated with early-onset schizophrenia and psychotic bipolar disorder. [provided by RefSeq, Jun 2009]
+
+https://www.ncbi.nlm.nih.gov/gene/7533
+
+## 5-3. Visualizing Data
+
+```{r warning = FALSE, message = FALSE, fig.width = 10, fig.height = 5}
+#heatmap
+NSLC_6A_3long %>%
+  filter(!is.na(values)) %>%
+  ggplot(aes(y = Gene, x = reorder (ID, values, median), fill = values)) +
+  geom_tile() +
+  theme_classic() +
+  theme(axis.text.x = element_blank()) +
+  scale_fill_gradient2(midpoint=0,limit=c(-2.5, 2.5),
+low="Green", mid="white",
+high="Red", na.value="white") +
+  geom_xsidetile(aes(y=proteome_subtype, xfill = proteome_subtype)) +
+  scale_xfill_manual(values = c("Tomato", "Brown", "Dark Orange")) +
+  labs(title = "Figure 3. PI3K-Akt signaling pathway-related genes expression",
+       subtitle = "",
+       x = "Values")
+```
+
+Figure 3 visualizes PI3K-Akt signaling pathway-related genes expression for each prototype subtype as a heatmap based on the information obtained from the paper. First of all, the expression amounts of the genes "YWHAG" and "YWHAH" do not seem to clearly show the characteristics of each subtype. Now, let's analyze each in more detail. Patients corresponding to "protome subtype 1" were found to have reduced expressions of the genes "PRKCA", "PDGFRB", "KIT", "GNG12", "FGFR4", and "FGF2". It can be seen that the expressions of the remaining "YWHAH", "YWHAG", and "KRAS" are relatively slightly increased. 
+Patients corresponding to "protome subtype 2" have increased the expression amount of the gene "KRAS", and in the rest of the genes, it seems difficult to specify the expression pattern due to the small number of samples.
+Finally, the results of "protome subtype 3" were interesting.It was confirmed that each gene expression pattern of patients corresponding to "subtype 3" was often different from the remaining two subtypes. Compared to other subtypes the expression of "PRKCA", "PDGFRB", "KIT", "GNG12", "FGFR4", and "FGF2" appears to be exceptionally higher. On the contrary, the expression amount of "KRAS" was up in other subtypes, the expression amount of "KRAS" was down in subtype 3.
+
+# 6. Discussion
+
+In Figure 1, it was found that there was a stage in which the difference in expression amount between genders was clearly visible for each subtype. In subtype 1, there was a significant difference in expression between gender in stage 'IA' and stage 'IB', and in subtype 2 and 3, it was confirmed that there was a significant difference in expression in stage 'IB'. In short, it was confirmed that there was a difference in expression of genes for each stage between gender that are expressed a lot for each subtype.
+In Figure 2, it was confirmed that the difference of 'log2T/N' between gender and stages was not large in both the proteome subtype in each mRNA expression and the proteome expression.
+Finally, in Figure 3, it was confirmed that the pattern of PI3K-Akt signaling pathway-related genes expression for each proteome subtype was largely divided into 'subtype1 & subtype2' and subtype3. Among them, KRAS is a notable gene, which confirmed that the expression amount was down in subtype 3, unlike subtype 1 and 2, where the expression amount was up. Normal KRAS is generally known as a protein that acts as a switch to regulate GDP/GTP-related activation and deactivation, which is known to have the necessary activities for cell differentiation, proliferation and survival. Based on this, I judged that the up or down of KRAS represents the characteristics of each subtype, and I think that a meaningful research result can be obtained by conducting additional research on the role of KRAS mentioned above.
+
+Lastly, to talk about the disappointment, this data analysis would be more reliable if the number of the patients were much larger. The number of patients in three proteome subtypes was not evenly distributed. When the data was analyzed per each proteome subtype, the number of subtype 2 was relatively less than others.
+
+
+
